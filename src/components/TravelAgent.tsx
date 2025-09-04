@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plane, Users, DollarSign, MessageCircle, Send, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, MapPin, Plane, Users, DollarSign, MessageCircle, Send, Sparkles, CheckCircle, MapIcon, Compass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import travelHero from '@/assets/travel-hero.jpg';
 
@@ -293,14 +294,14 @@ export const TravelAgent = () => {
             </div>
           )}
 
-          {/* Chat Interface */}
+          {/* Tabbed Interface */}
           <div className={showPreferences ? "lg:col-span-2" : "lg:col-span-3"}>
-            <Card className="bg-gradient-card backdrop-blur-sm border-0 shadow-card h-[600px] flex flex-col">
+            <Card className="bg-gradient-card backdrop-blur-sm border-0 shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-primary" />
-                    Travel Planning Assistant
+                    <Compass className="w-5 h-5 text-primary" />
+                    TravelMate AI Assistant
                   </div>
                   {!showPreferences && (
                     <Button 
@@ -314,43 +315,161 @@ export const TravelAgent = () => {
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                  {messages.map(message => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] p-4 rounded-2xl ${
-                          message.type === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
-                        <span className="text-xs opacity-70 mt-2 block">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+              <CardContent>
+                <Tabs defaultValue="planning" className="h-[600px] flex flex-col">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="planning" className="flex items-center gap-2">
+                      <MapIcon className="w-4 h-4" />
+                      Travel Planning Assistant
+                    </TabsTrigger>
+                    <TabsTrigger value="assistant" className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Travel Assistant
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="planning" className="flex-1 flex flex-col">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">Plan Your Perfect Trip</h3>
+                      <p className="text-muted-foreground text-sm">Get personalized recommendations based on school holidays, budget, and preferences</p>
+                    </div>
+                    
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 bg-muted/20 rounded-lg p-4">
+                      {messages.map(message => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] p-4 rounded-2xl ${
+                              message.type === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background text-foreground shadow-sm border'
+                            }`}
+                          >
+                            <p className="text-sm">{message.content}</p>
+                            <span className="text-xs opacity-70 mt-2 block">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Message Input */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ask about destinations, activities, or planning tips..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleSendMessage} variant="travel">
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="assistant" className="flex-1 flex flex-col">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">Travel Support & Management</h3>
+                      <p className="text-muted-foreground text-sm">Get help with bookings, itinerary changes, and travel assistance</p>
+                    </div>
+
+                    <div className="flex-1 space-y-6">
+                      {/* Quick Actions */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Calendar className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">Modify Booking</h4>
+                              <p className="text-xs text-muted-foreground">Change dates or details</p>
+                            </div>
+                          </div>
+                        </Card>
+
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <MapPin className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">Local Guide</h4>
+                              <p className="text-xs text-muted-foreground">Nearby attractions</p>
+                            </div>
+                          </div>
+                        </Card>
+
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Plane className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">Flight Status</h4>
+                              <p className="text-xs text-muted-foreground">Check updates</p>
+                            </div>
+                          </div>
+                        </Card>
+
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <MessageCircle className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">Emergency Help</h4>
+                              <p className="text-xs text-muted-foreground">24/7 support</p>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+
+                      {/* Current Trip Status */}
+                      <Card className="p-6 bg-gradient-to-r from-primary/5 to-accent/5">
+                        <h4 className="font-semibold mb-4 flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-primary" />
+                          Current Trip Status
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Destination</span>
+                            <span className="text-sm font-medium">{preferences.destination || 'Not set'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Travel dates</span>
+                            <span className="text-sm font-medium">
+                              {preferences.startDate && preferences.endDate 
+                                ? `${preferences.startDate} to ${preferences.endDate}`
+                                : 'Not set'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Travelers</span>
+                            <span className="text-sm font-medium">{preferences.travelers || 'Not set'}</span>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Chat for Travel Assistant */}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Need help with your trip? Ask here..."
+                          className="flex-1"
+                        />
+                        <Button variant="travel">
+                          <Send className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Message Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSendMessage} variant="travel">
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
