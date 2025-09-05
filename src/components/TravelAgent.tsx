@@ -10,13 +10,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, Plane, Users, DollarSign, MessageCircle, Send, Sparkles, CheckCircle, MapIcon, Compass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import travelHero from '@/assets/travel-hero.jpg';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo-improved.png';
 
 interface TravelMessage {
   id: string;
   type: 'user' | 'agent';
   content: string;
   timestamp: Date;
+}
+
+interface FlightOption {
+  id: string;
+  airline: string;
+  departure: string;
+  arrival: string;
+  duration: string;
+  price: number;
+  stops: number;
+  departureTime: string;
+  arrivalTime: string;
 }
 
 interface TravelPreferences {
@@ -28,6 +40,12 @@ interface TravelPreferences {
   comfort: string;
   interests: string[];
   agentTheme: string;
+  searchQuery?: string;
+}
+
+interface TravelState {
+  searchResults: FlightOption[];
+  isSearching: boolean;
 }
 
 export const TravelAgent = () => {
@@ -50,6 +68,10 @@ export const TravelAgent = () => {
     comfort: '',
     interests: [],
     agentTheme: 'friendly'
+  });
+  const [travelState, setTravelState] = useState<TravelState>({
+    searchResults: [],
+    isSearching: false
   });
   const [showPreferences, setShowPreferences] = useState(true);
 
@@ -93,6 +115,14 @@ export const TravelAgent = () => {
   };
 
   const generateAgentResponse = (userInput: string, prefs: TravelPreferences) => {
+    const lowerInput = userInput.toLowerCase();
+    
+    // Check if user is asking about flights
+    if (lowerInput.includes('flight') || lowerInput.includes('fly') || lowerInput.includes('airline')) {
+      searchFlights(prefs);
+      return "I'm searching for the best flight options for you! Let me find flights that match your preferences and budget...";
+    }
+    
     const responses = [
       `That sounds amazing! Based on your preferences for ${prefs.destination || 'your destination'}, I'm thinking of some fantastic options. With a ${prefs.comfort} comfort level and ${prefs.budget} budget, I can suggest some perfect family-friendly accommodations.`,
       `Perfect! I love that you're considering the school holiday dates. Let me check the best travel deals for ${prefs.startDate} to ${prefs.endDate}. This timing actually works great for avoiding crowds!`,
@@ -100,6 +130,75 @@ export const TravelAgent = () => {
       `I'm excited to help plan this! Given your interests in ${prefs.interests.join(', ')}, I have some incredible experiences in mind that the whole family will love.`
     ];
     return responses[Math.floor(Math.random() * responses.length)];
+  };
+
+  const searchFlights = (prefs: TravelPreferences) => {
+    setTravelState(prev => ({ ...prev, isSearching: true }));
+    
+    // Simulate flight search API call
+    setTimeout(() => {
+      const mockFlights: FlightOption[] = [
+        {
+          id: '1',
+          airline: 'SkyWings Airlines',
+          departure: 'New York (JFK)',
+          arrival: prefs.destination || 'Paris (CDG)',
+          duration: '7h 30m',
+          price: prefs.budget === 'budget' ? 650 : prefs.budget === 'mid-range' ? 850 : 1200,
+          stops: 0,
+          departureTime: '08:30',
+          arrivalTime: '16:00'
+        },
+        {
+          id: '2',
+          airline: 'Global Express',
+          departure: 'New York (LGA)',
+          arrival: prefs.destination || 'Paris (ORY)',
+          duration: '9h 15m',
+          price: prefs.budget === 'budget' ? 580 : prefs.budget === 'mid-range' ? 720 : 980,
+          stops: 1,
+          departureTime: '14:20',
+          arrivalTime: '23:35'
+        },
+        {
+          id: '3',
+          airline: 'Premium Air',
+          departure: 'New York (JFK)',
+          arrival: prefs.destination || 'Paris (CDG)',
+          duration: '7h 45m',
+          price: prefs.budget === 'budget' ? 720 : prefs.budget === 'mid-range' ? 950 : 1350,
+          stops: 0,
+          departureTime: '22:15',
+          arrivalTime: '06:00+1'
+        },
+        {
+          id: '4',
+          airline: 'Budget Airways',
+          departure: 'New York (EWR)',
+          arrival: prefs.destination || 'Paris (BVA)',
+          duration: '11h 20m',
+          price: prefs.budget === 'budget' ? 420 : prefs.budget === 'mid-range' ? 580 : 750,
+          stops: 2,
+          departureTime: '06:45',
+          arrivalTime: '18:05'
+        }
+      ];
+      
+      setTravelState(prev => ({ 
+        ...prev, 
+        searchResults: mockFlights,
+        isSearching: false
+      }));
+      
+      // Add flight results message
+      const flightMessage: TravelMessage = {
+        id: (Date.now() + 2).toString(),
+        type: 'agent',
+        content: `Great! I found ${mockFlights.length} flight options for your trip to ${prefs.destination}. The options range from budget-friendly to premium, with prices starting at $${Math.min(...mockFlights.map(f => f.price))}. Check the results below and let me know which one interests you!`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, flightMessage]);
+    }, 2000);
   };
 
   const toggleInterest = (interest: string) => {
@@ -141,7 +240,7 @@ export const TravelAgent = () => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent">
-      <div className="container mx-auto px-6 h-full flex items-center">
+          <div className="container mx-auto px-6 h-full flex items-center">
             <div className="text-white max-w-2xl">
               <div className="flex items-center gap-4 mb-6">
                 <img 
@@ -368,6 +467,53 @@ export const TravelAgent = () => {
                       ))}
                     </div>
 
+                    {/* Flight Search Results */}
+                    {travelState.searchResults.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Plane className="w-4 h-4 text-primary" />
+                          Flight Options Found
+                        </h4>
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                          {travelState.searchResults.map(flight => (
+                            <Card key={flight.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border hover:border-primary/30">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-sm">{flight.airline}</span>
+                                    {flight.stops === 0 && (
+                                      <Badge variant="secondary" className="text-xs">Direct</Badge>
+                                    )}
+                                    {flight.stops > 0 && (
+                                      <Badge variant="outline" className="text-xs">{flight.stops} stop{flight.stops > 1 ? 's' : ''}</Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground mb-1">
+                                    <span className="font-medium">{flight.departureTime}</span> {flight.departure} → 
+                                    <span className="font-medium ml-1">{flight.arrivalTime}</span> {flight.arrival}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">Duration: {flight.duration}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xl font-bold text-primary">${flight.price}</div>
+                                  <div className="text-xs text-muted-foreground">per person</div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {travelState.isSearching && (
+                      <div className="mb-4 p-4 bg-muted/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                          <span className="text-sm">Searching for flights...</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Message Input */}
                     <div className="flex gap-2">
                       <Input
@@ -406,12 +552,24 @@ export const TravelAgent = () => {
 
                         <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <MapPin className="w-5 h-5 text-primary" />
+                            <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                              <MapPin className="w-5 h-5 text-secondary" />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-sm">Local Guide</h4>
-                              <p className="text-xs text-muted-foreground">Nearby attractions</p>
+                              <h4 className="font-semibold text-sm">Check Itinerary</h4>
+                              <p className="text-xs text-muted-foreground">View your trip details</p>
+                            </div>
+                          </div>
+                        </Card>
+
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                              <Users className="w-5 h-5 text-accent" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">Travel Support</h4>
+                              <p className="text-xs text-muted-foreground">24/7 assistance</p>
                             </div>
                           </div>
                         </Card>
@@ -419,64 +577,32 @@ export const TravelAgent = () => {
                         <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Plane className="w-5 h-5 text-primary" />
+                              <DollarSign className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-sm">Flight Status</h4>
-                              <p className="text-xs text-muted-foreground">Check updates</p>
-                            </div>
-                          </div>
-                        </Card>
-
-                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <MessageCircle className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-sm">Emergency Help</h4>
-                              <p className="text-xs text-muted-foreground">24/7 support</p>
+                              <h4 className="font-semibold text-sm">Billing & Refunds</h4>
+                              <p className="text-xs text-muted-foreground">Manage payments</p>
                             </div>
                           </div>
                         </Card>
                       </div>
 
-                      {/* Current Trip Status */}
-                      <Card className="p-6 bg-gradient-to-r from-primary/5 to-accent/5">
-                        <h4 className="font-semibold mb-4 flex items-center gap-2">
-                          <CheckCircle className="w-5 h-5 text-primary" />
-                          Current Trip Status
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Destination</span>
-                            <span className="text-sm font-medium">{preferences.destination || 'Not set'}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Travel dates</span>
-                            <span className="text-sm font-medium">
-                              {preferences.startDate && preferences.endDate 
-                                ? `${preferences.startDate} to ${preferences.endDate}`
-                                : 'Not set'
-                              }
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Travelers</span>
-                            <span className="text-sm font-medium">{preferences.travelers || 'Not set'}</span>
-                          </div>
+                      {/* Support Chat */}
+                      <div className="flex-1 bg-muted/20 rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">Need Help?</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Our travel specialists are here to help with any questions about your bookings, 
+                          itinerary changes, or travel requirements.
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Need help with your trip? Ask here..."
+                            className="flex-1"
+                          />
+                          <Button variant="travel">
+                            <Send className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </Card>
-
-                      {/* Chat for Travel Assistant */}
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Need help with your trip? Ask here..."
-                          className="flex-1"
-                        />
-                        <Button variant="travel">
-                          <Send className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
