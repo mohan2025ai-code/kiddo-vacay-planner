@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, Plane, Users, DollarSign, MessageCircle, Send, Sparkles, CheckCircle, MapIcon, Compass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import travelHero from '@/assets/travel-hero.jpg';
+import logo from '@/assets/logo.png';
 
 interface TravelMessage {
   id: string;
@@ -140,9 +141,19 @@ export const TravelAgent = () => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent">
-          <div className="container mx-auto px-6 h-full flex items-center">
+      <div className="container mx-auto px-6 h-full flex items-center">
             <div className="text-white max-w-2xl">
-              <h1 className="text-5xl font-bold mb-4">Your Personal Travel AI Agent</h1>
+              <div className="flex items-center gap-4 mb-6">
+                <img 
+                  src={logo} 
+                  alt="TravelMate AI Logo" 
+                  className="w-16 h-16 object-contain"
+                />
+                <div>
+                  <h1 className="text-5xl font-bold mb-2">TravelMate AI</h1>
+                  <p className="text-xl opacity-90">Your Personal Travel AI Agent</p>
+                </div>
+              </div>
               <p className="text-xl mb-6">Plan perfect family vacations around school holidays with personalized recommendations</p>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
