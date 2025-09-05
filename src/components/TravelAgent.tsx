@@ -43,9 +43,21 @@ interface TravelPreferences {
   searchQuery?: string;
 }
 
+interface ItineraryDay {
+  day: number;
+  date: string;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  dining: string;
+  accommodation?: string;
+}
+
 interface TravelState {
   searchResults: FlightOption[];
   isSearching: boolean;
+  itinerary: ItineraryDay[];
+  isGeneratingItinerary: boolean;
 }
 
 export const TravelAgent = () => {
@@ -71,7 +83,9 @@ export const TravelAgent = () => {
   });
   const [travelState, setTravelState] = useState<TravelState>({
     searchResults: [],
-    isSearching: false
+    isSearching: false,
+    itinerary: [],
+    isGeneratingItinerary: false
   });
   const [showPreferences, setShowPreferences] = useState(true);
 
@@ -121,6 +135,12 @@ export const TravelAgent = () => {
     if (lowerInput.includes('flight') || lowerInput.includes('fly') || lowerInput.includes('airline')) {
       searchFlights(prefs);
       return "I'm searching for the best flight options for you! Let me find flights that match your preferences and budget...";
+    }
+    
+    // Check if user is asking for itinerary
+    if (lowerInput.includes('itinerary') || lowerInput.includes('plan') || lowerInput.includes('schedule') || lowerInput.includes('day by day')) {
+      generateItinerary(prefs, userInput);
+      return "Let me create a detailed itinerary for your trip! I'll include activities, dining recommendations, and perfect timing based on your preferences...";
     }
     
     const responses = [
@@ -199,6 +219,89 @@ export const TravelAgent = () => {
       };
       setMessages(prev => [...prev, flightMessage]);
     }, 2000);
+  };
+
+  const generateItinerary = (prefs: TravelPreferences, userInput: string) => {
+    setTravelState(prev => ({ ...prev, isGeneratingItinerary: true }));
+    
+    // Simulate itinerary generation
+    setTimeout(() => {
+      const startDate = new Date(prefs.startDate || '2024-07-01');
+      const endDate = new Date(prefs.endDate || '2024-07-07');
+      const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) + 1;
+      
+      const mockItinerary: ItineraryDay[] = Array.from({ length: Math.min(dayCount, 7) }, (_, index) => {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + index);
+        
+        const activities = getActivitiesByInterests(prefs.interests, prefs.destination);
+        const dayActivities = activities[index % activities.length];
+        
+        return {
+          day: index + 1,
+          date: currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+          morning: dayActivities.morning,
+          afternoon: dayActivities.afternoon,
+          evening: dayActivities.evening,
+          dining: dayActivities.dining,
+          accommodation: index === 0 ? getAccommodationByBudget(prefs.budget, prefs.comfort) : undefined
+        };
+      });
+      
+      setTravelState(prev => ({ 
+        ...prev, 
+        itinerary: mockItinerary,
+        isGeneratingItinerary: false
+      }));
+      
+      // Add itinerary message
+      const itineraryMessage: TravelMessage = {
+        id: (Date.now() + 3).toString(),
+        type: 'agent',
+        content: `Perfect! I've created a ${dayCount}-day itinerary for your trip to ${prefs.destination}. This plan includes activities tailored to your interests in ${prefs.interests.slice(0, 2).join(' and ')}, restaurant recommendations, and accommodations that fit your ${prefs.budget} budget. Check out the detailed day-by-day plan below!`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, itineraryMessage]);
+    }, 2500);
+  };
+
+  const getActivitiesByInterests = (interests: string[], destination: string) => {
+    const activitySets = [
+      {
+        morning: "Visit iconic landmarks and take photos",
+        afternoon: "Explore local museums and cultural sites",
+        evening: "Enjoy sunset views at scenic viewpoint",
+        dining: "Traditional local cuisine at highly-rated restaurant"
+      },
+      {
+        morning: "Adventure activity (hiking, water sports, etc.)",
+        afternoon: "Visit local markets and shopping districts",
+        evening: "Live entertainment or cultural show",
+        dining: "Family-friendly restaurant with local specialties"
+      },
+      {
+        morning: "Nature park or botanical garden visit",
+        afternoon: "Interactive activities for the whole family",
+        evening: "Relaxing beachside or park stroll",
+        dining: "Casual dining with international options"
+      },
+      {
+        morning: "Historical sites and guided tour",
+        afternoon: "Local experiences and workshops",
+        evening: "Night market or local festivities",
+        dining: "Fine dining experience with regional cuisine"
+      }
+    ];
+    return activitySets;
+  };
+
+  const getAccommodationByBudget = (budget: string, comfort: string) => {
+    const accommodations = {
+      budget: "Budget-friendly hotel with family amenities",
+      "mid-range": "Mid-range hotel with pool and family facilities",
+      luxury: "Luxury resort with premium family services"
+    };
+    return accommodations[budget as keyof typeof accommodations] || accommodations["mid-range"];
   };
 
   const toggleInterest = (interest: string) => {
@@ -504,6 +607,54 @@ export const TravelAgent = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* Itinerary Results */}
+                    {travelState.itinerary.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <MapIcon className="w-4 h-4 text-primary" />
+                          Your Personalized Itinerary
+                        </h4>
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {travelState.itinerary.map(day => (
+                            <Card key={day.day} className="p-4 border hover:border-primary/30 transition-colors">
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                                  {day.day}
+                                </div>
+                                <div className="flex-1">
+                                  <h5 className="font-semibold text-sm mb-1">{day.date}</h5>
+                                  <div className="space-y-2 text-sm">
+                                    <div>
+                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Morning</span>
+                                      <p className="text-foreground">{day.morning}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Afternoon</span>
+                                      <p className="text-foreground">{day.afternoon}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evening</span>
+                                      <p className="text-foreground">{day.evening}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dining</span>
+                                      <p className="text-foreground">{day.dining}</p>
+                                    </div>
+                                    {day.accommodation && (
+                                      <div>
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Accommodation</span>
+                                        <p className="text-foreground">{day.accommodation}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     {travelState.isSearching && (
                       <div className="mb-4 p-4 bg-muted/20 rounded-lg">
@@ -514,10 +665,19 @@ export const TravelAgent = () => {
                       </div>
                     )}
 
+                    {travelState.isGeneratingItinerary && (
+                      <div className="mb-4 p-4 bg-muted/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                          <span className="text-sm">Creating your personalized itinerary...</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Message Input */}
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Ask about destinations, activities, or planning tips..."
+                        placeholder="Ask about destinations, flights, or request an itinerary..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
